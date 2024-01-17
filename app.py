@@ -25,7 +25,7 @@ root.withdraw()
 
 
 class Ui_Form(object):
-    class_name = ['BKHCM','DHQG','HUFLIT','USSH','UEB']
+    class_name = ['BKHCM','DHQG','HUFLIT','UEB','USSH']
 
     def get_model():
         model_vgg16_conv = VGG16(weights='imagenet', include_top=False)
@@ -49,7 +49,7 @@ class Ui_Form(object):
         return my_model
 
     model = get_model()
-    model.load_weights("weights-01-0.98.hdf5")
+    model.load_weights("weights-12-0.99.hdf5")
 
 
     def getImage(self):
@@ -82,12 +82,11 @@ class Ui_Form(object):
         normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
         data[0] = normalized_image_array
 
-        prediction = self.model.predict(data)
-        accuracy = float("{:.2f}".format(max(prediction[0])))
-        transform = [1 if x >= 0.5 else 0 for x in prediction[0]]
-        pred = transform.index(max(transform))
-        title = self.class_name[pred]
-        pred_lbl = title + " - " + str(accuracy*100) + "%"
+        predict = self.model.predict(data)
+        title = self.class_name[np.argmax(predict[0])]
+        print(title)
+        accuracy = np.max(predict[0])
+        pred_lbl = f"{title} - {accuracy*100:.2f}%"
         self.label_3.setText(pred_lbl)
 
     def displayImage(self, img,window=1):
@@ -110,26 +109,31 @@ class Ui_Form(object):
             cam = cv2.VideoCapture(0)
             cv2.namedWindow("test")
 
-            reset_label = False  # Flag to indicate whether to reset label_4
+            while(True):
+                ret, image_org = cam.read()
+                if not ret:
+                    continue
+                image_org = cv2.resize(image_org, dsize=None,fx=0.5,fy=0.5)
 
-            while True:
-                ret, frame = cam.read()
-                img_name = "Image_Cam/opencv_frame_{}.png".format(0)
-                cv2.imwrite(img_name, frame)
-                image = Image.open(img_name)
-                self.predict(image)
-                self.displayImage(frame, 1)
+                image = image_org.copy()
+                image = cv2.resize(image, dsize=(128, 128))
+                image = image.astype('float')*1./255
+                image = np.expand_dims(image, axis=0)
+
+                predict = self.model.predict(image)
+                print("This picture is: ", self.class_name[np.argmax(predict[0])], (predict[0]))
+                print(np.max(predict[0],axis=0))
+                if (np.max(predict)>=0.8) and (np.argmax(predict[0])!=0):
+                    self.label_3.setText(self.class_name[np.argmax(predict)])
+
+
+                cv2.imshow("Picture", image_org)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    reset_label = True
                     break
 
             cam.release()
             cv2.destroyAllWindows()
-
-            if reset_label:
-                self.label_4.setGeometry(QtCore.QRect(80, 80, 448, 448))
-                self.label_4.setStyleSheet("border-image:url(GUI/Image/UNIVERSITY.png)")
 
 
 
