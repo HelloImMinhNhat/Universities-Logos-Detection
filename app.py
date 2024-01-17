@@ -25,7 +25,7 @@ root.withdraw()
 
 
 class Ui_Form(object):
-    class_name = ['BKHCM','DHQG','HUFLIT','UEB','USSH']
+    class_name = ['00000','BKHCM','DHQG','HUFLIT','UEB','USSH']
 
     def get_model():
         model_vgg16_conv = VGG16(weights='imagenet', include_top=False)
@@ -41,7 +41,7 @@ class Ui_Form(object):
         x = Dropout(0.5)(x)
         x = Dense(4096, activation='relu', name='fc2')(x)
         x = Dropout(0.5)(x)
-        x = Dense(5, activation='softmax', name='predictions')(x)
+        x = Dense(6, activation='softmax', name='predictions')(x)
 
         my_model = Model(inputs=input, outputs=x)
         my_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -49,15 +49,15 @@ class Ui_Form(object):
         return my_model
 
     model = get_model()
-    model.load_weights("weights-12-0.99.hdf5")
+    model.load_weights("weights-14-1.00.hdf5")
 
 
     def getImage(self):
-        nameimg = filedialog.askopenfilename(initialdir="test/", title="Select Image File",
+        nameimg = filedialog.askopenfilename(initialdir="/Image_Cam/", title="Select Image File",
                                               filetypes=(("All Files", "*.*"), ("JPG File", "*.jpg"), ("PNG File", "*.png")))
         if nameimg: 
             try:
-                image = Image.open(nameimg)
+                image = Image.open(nameimg).convert("RGB")
                 self.label_4.setGeometry(QtCore.QRect(80, 80, 448, 448))
                 
                 pixmap = QtGui.QPixmap(nameimg)
@@ -107,7 +107,6 @@ class Ui_Form(object):
             self.label_4.setStyleSheet("border-image:url(GUI/Image/UNIVERSITY.png)")
 
             cam = cv2.VideoCapture(0)
-            cv2.namedWindow("test")
 
             while(True):
                 ret, image_org = cam.read()
@@ -135,8 +134,26 @@ class Ui_Form(object):
             cam.release()
             cv2.destroyAllWindows()
 
-
-
+    def make_data(self):
+        dir_name = filedialog.askdirectory(initialdir="/data/", title="Select Directory")
+    # Code chụp hình từ camera và lưu vào thư mục dữ liệu huấn luyện
+        cap = cv2.VideoCapture(0)
+        i = 0
+        while True:
+            i += 1
+            ret, frame = cap.read()
+            if not ret:
+                continue
+            frame = cv2.resize(frame, dsize=None, fx=0.3, fy=0.3)
+            cv2.imshow('frame', frame)
+            if i >= 60:
+                print("Số ảnh capture = ", i - 60)
+                label = self.comboBox.currentText()
+                cv2.imwrite(os.path.join(dir_name, label, f"{i}.png"), frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
 
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -163,6 +180,14 @@ class Ui_Form(object):
         self.pushButton_3.clicked.connect(self.video)
         self.pushButton_3.setObjectName("pushButton_3")
 
+        self.pushButton_4 = QtWidgets.QPushButton(Form)
+        self.pushButton_4.setGeometry(QtCore.QRect(720, 660, 362, 82))
+        self.pushButton_4.setStyleSheet("QPushButton#pushButton_4 {border-image:url(GUI/Image/make_data_hover.png);}QPushButton#pushButton_4:hover {border-image:url(GUI/Image/make_data.png);}")
+        self.pushButton_4.setText("")
+        self.pushButton_4.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        self.pushButton_4.clicked.connect(self.make_data)
+        self.pushButton_4.setObjectName("pushButton_4")
+
         self.label_2 = QtWidgets.QLabel(Form)
         self.label_2.setGeometry(QtCore.QRect(20, 580, 622, 82))
         self.label_2.setStyleSheet("border-image:url(GUI/Image/Group 4.png)")
@@ -176,13 +201,13 @@ class Ui_Form(object):
         self.label_3.setText("")
         self.label_3.setObjectName("label_3")
 
+
         self.label_4 = QtWidgets.QLabel(Form)
         self.label_4.setGeometry(QtCore.QRect(80, 80, 448, 448))
         self.label_4.setStyleSheet("border-image:url(GUI/Image/UNIVERSITY.png)")
         self.label_4.setObjectName("label_4")
-
-        self.retranslateUi(Form)
-        QtCore.QMetaObject.connectSlotsByName(Form)
+        
+        self.comboBox = QtWidgets.QComboBox(Form)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
@@ -201,3 +226,5 @@ if __name__ == "__main__":
     ui.setupUi(Form)
     Form.show()
     sys.exit(app.exec_())
+    label = QtWidgets.QFileDialog.getExistingDirectory(Form, "Select Label Directory", options=QtWidgets.QFileDialog.ShowDirsOnly)
+    
