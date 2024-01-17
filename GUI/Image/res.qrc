@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="Image">
+    <file>Rectangle 1.png</file>
+    <file>Group 1.png</file>
+    <file>Group 2 (1).png</file>
+    <file>Group 1 (1).png</file>
+    <file>Group 4.png</file>
+    <file>Group 3.png</file>
+    <file>Group 2.png</file>
+  </qresource>
+</RCC>
