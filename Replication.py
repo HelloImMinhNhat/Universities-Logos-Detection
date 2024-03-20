@@ -3,11 +3,9 @@ import os
 import numpy as np
 
 def process_images(input_folder, output_folder):
-    # Tạo thư mục đầu ra nếu chưa tồn tại
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    # Lặp qua tất cả các tập tin trong thư mục đầu vào
     for filename in os.listdir(input_folder):
         if filename.endswith(('.jpg', '.jpeg', '.png', '.bmp')):
             # Đường dẫn đầy đủ của tệp hình ảnh đầu vào
@@ -34,7 +32,7 @@ def process_images(input_folder, output_folder):
             cv2.imwrite(os.path.join(output_folder, 'flipped_left_' + filename), flipped_left)
             cv2.imwrite(os.path.join(output_folder, 'flipped_right_' + filename), flipped_right)
 
-def rename_files_in_folder(folder_path):
+def rename_files_in_folder(folder_path, start_index=0):
     # Kiểm tra xem đường dẫn thư mục có tồn tại không
     if not os.path.exists(folder_path):
         print(f"Thư mục '{folder_path}' không tồn tại.")
@@ -49,7 +47,8 @@ def rename_files_in_folder(folder_path):
         file_extension = os.path.splitext(file_name)[1]
 
         # Tạo tên mới cho tệp
-        new_file_name = f"{index + 1}{file_extension}"
+        new_index = start_index + index
+        new_file_name = f"{new_index}{file_extension}"
 
         # Đường dẫn đầy đủ của tệp cũ và mới
         old_file_path = os.path.join(folder_path, file_name)
@@ -57,8 +56,8 @@ def rename_files_in_folder(folder_path):
 
         # Kiểm tra xem tệp mới đã tồn tại chưa
         while os.path.exists(new_file_path):
-            index += 1
-            new_file_name = f"{index + 1}{file_extension}"
+            new_index += 1
+            new_file_name = f"{new_index}{file_extension}"
             new_file_path = os.path.join(folder_path, new_file_name)
 
         # Đổi tên tệp
@@ -109,9 +108,11 @@ def augment_images(input_folder, output_folder):
 
 if __name__ == "__main__":
     # Thay đổi đường dẫn thư mục đầu vào và đầu ra tùy thuộc vào nhu cầu của bạn
-    input_folder = "./data/BKHCM/"
+    input_folder = "./data/train/USSH"
+
     output_folder = "./data/QNU/"
 
     # process_images(input_folder, output_folder)
-    rename_files_in_folder(input_folder)
+    rename_files_in_folder(input_folder, start_index=2322)
+
     # augment_images(input_folder, output_folder)

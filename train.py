@@ -52,7 +52,7 @@ def load_data():
 
     return pixels, labels
 
-#save_data()
+save_data()
 X,y = load_data()
 X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.2, random_state=100)
 
@@ -73,7 +73,7 @@ def get_model():
     x = Dropout(0.5)(x)
     x = Dense(4096, activation='relu', name='fc2')(x)
     x = Dropout(0.5)(x)
-    x = Dense(5, activation='softmax', name='predictions')(x)
+    x = Dense(6, activation='softmax', name='predictions')(x)
 
     my_model = Model(inputs=input, outputs=x)
     my_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])

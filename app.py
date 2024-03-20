@@ -17,6 +17,10 @@ import numpy as np
 from keras.applications.vgg16 import VGG16
 from keras.layers import Input, Flatten, Dense, Dropout
 from keras.models import Model
+import torch
+from torchvision import transforms
+from PIL import Image
+from tensorflow.keras.models import load_model
 
 root = tk.Tk()
 root.withdraw()
@@ -49,22 +53,22 @@ class Ui_Form(object):
         return my_model
 
     model = get_model()
-    model.load_weights("weights-14-1.00.hdf5")
-
+    model.load_weights("weights-16-1.00.hdf5")
+    test_model = load_model("unet.h5")
 
     def getImage(self):
-        nameimg = filedialog.askopenfilename(initialdir="/Image_Cam/", title="Select Image File",
+        nameimg = filedialog.askopenfilename(initialdir="test/", title="Select Image File",
                                               filetypes=(("All Files", "*.*"), ("JPG File", "*.jpg"), ("PNG File", "*.png")))
         if nameimg: 
             try:
-                image = Image.open(nameimg).convert("RGB")
+                output = self.predict_segment(nameimg)
                 self.label_4.setGeometry(QtCore.QRect(80, 80, 448, 448))
                 
-                pixmap = QtGui.QPixmap(nameimg)
+                qimage = self.numpy_array_to_qimage(output)
+                pixmap = QtGui.QPixmap.fromImage(qimage)
                 self.label_4.setPixmap(pixmap)
                 self.label_4.setScaledContents(True)
                 
-                self.predict(image)
             except Exception as e:
                 print(f"Error: {e}")
 
@@ -72,6 +76,23 @@ class Ui_Form(object):
         dialog =QMessageBox(Form)
         dialog.setWindowTitle("Ban co muon su dung video ?")
 
+    def numpy_array_to_qimage(self, arr):
+        height, width, channel = arr.shape
+        bytesPerLine = 3 * width
+        qimg = QImage(arr.data, width, height, bytesPerLine, QImage.Format_RGB888)
+        return qimg
+
+    def predict_segment(self, image_path):
+        image = cv2.imread(image_path)
+        image = cv2.resize(image, (224, 224))
+        image = image.astype(np.float32) / 255.0  
+        input_data = np.expand_dims(image, axis=0)
+        
+        output_data = self.test_model.predict(input_data)
+        
+        output_image = (output_data[0] * 255).astype(np.uint8) 
+        output_image = cv2.cvtColor(output_image, cv2.COLOR_GRAY2RGB)
+        return output_image
 
     def predict(self,image):
         data = np.ndarray(shape=(1, 128, 128, 3), dtype=np.float32)
@@ -107,6 +128,7 @@ class Ui_Form(object):
             self.label_4.setStyleSheet("border-image:url(GUI/Image/UNIVERSITY.png)")
 
             cam = cv2.VideoCapture(0)
+            cv2.namedWindow("test")
 
             while(True):
                 ret, image_org = cam.read()
@@ -120,15 +142,15 @@ class Ui_Form(object):
                 image = np.expand_dims(image, axis=0)
 
                 predict = self.model.predict(image)
+                self.displayImage(image_org, 1)
                 print("This picture is: ", self.class_name[np.argmax(predict[0])], (predict[0]))
                 print(np.max(predict[0],axis=0))
                 if (np.max(predict)>=0.8) and (np.argmax(predict[0])!=0):
                     self.label_3.setText(self.class_name[np.argmax(predict)])
 
-
-                cv2.imshow("Picture", image_org)
-
                 if cv2.waitKey(1) & 0xFF == ord('q'):
+                    self.label_4.setGeometry(QtCore.QRect(80, 80, 448, 448))
+                    self.label_4.setStyleSheet("border-image:url(GUI/Image/UNIVERSITY.png)")
                     break
 
             cam.release()
@@ -136,7 +158,6 @@ class Ui_Form(object):
 
     def make_data(self):
         dir_name = filedialog.askdirectory(initialdir="/data/", title="Select Directory")
-    # Code chụp hình từ camera và lưu vào thư mục dữ liệu huấn luyện
         cap = cv2.VideoCapture(0)
         i = 0
         while True:
